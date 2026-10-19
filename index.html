@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#171717">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dolce Timer">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="description" content="Temporizador móvil para preparar tus cafés Dolce Gusto.">
+<title>Dolce Timer</title>
+<style>
+:root{color-scheme:dark;--bg:#111;--panel:#1d1d1f;--panel2:#28282b;--text:#f7f5f2;--muted:#aaa6a2;--red:#c9272c;--red2:#e13a3f;--line:#38383b;--green:#65d6a1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100dvh}
+button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}button:focus-visible,input:focus-visible{outline:3px solid #ff8585;outline-offset:3px}
+.app{max-width:620px;margin:0 auto;min-height:100dvh;padding:env(safe-area-inset-top) 16px calc(92px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;padding:20px 2px 18px}.logo{height:48px;width:48px;border-radius:16px;background:var(--red);display:grid;place-items:center;font-size:25px;box-shadow:0 8px 22px #c9272c38}.brand{flex:1}.brand h1{font-size:21px;margin:0;letter-spacing:-.5px}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}.icon-btn{width:42px;height:42px;border-radius:14px;background:var(--panel2);font-size:22px;flex:0 0 42px}.icon-btn:active{background:#454549}
+@media(min-width:760px){body{background:radial-gradient(ellipse at top,#242426 0,#111 55%)}.app{max-width:1080px;padding-left:28px;padding-right:28px}.app main{max-width:980px;margin:0 auto}#homeView.active{display:grid;grid-template-columns:minmax(330px,.9fr) minmax(360px,1.1fr);gap:22px;align-items:start}#homeView>.timer-card{grid-row:span 3}#homeView>.section-head{margin-top:0}#homeView>.section-head,#homeView>.sub,#homeView>.drink-grid{grid-column:2}.drink-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.drink{display:flex}.bottom-nav{bottom:18px;left:50%;right:auto;transform:translateX(-50%);width:min(560px,calc(100% - 32px));border:1px solid #3b3b3e;border-radius:22px;padding:8px 12px;box-shadow:0 12px 40px #0008}.app{padding-bottom:140px}header{max-width:980px;margin:0 auto;padding-top:28px}.timer-card{position:sticky;top:24px}}
+@media(max-width:420px){header{gap:7px}.brand h1{font-size:19px}.brand p{font-size:12px}.icon-btn{width:36px;height:38px;flex-basis:36px;border-radius:12px}}
+h2{font-size:17px;margin:20px 0 12px;letter-spacing:-.2px}.sub{color:var(--muted);font-size:13px;margin:-5px 0 14px}
+.timer-card{background:linear-gradient(145deg,#272729,#1b1b1d);border:1px solid #353538;border-radius:28px;padding:22px 18px 20px;text-align:center;position:relative;overflow:hidden}
+.timer-card:before{content:"";position:absolute;width:200px;height:200px;border-radius:50%;background:#c9272c12;filter:blur(8px);top:-110px;right:-40px;pointer-events:none}
+.selected-label{color:#ff9a9d;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.drink-name{font-size:23px;font-weight:750;margin:7px 0 3px;letter-spacing:-.5px}.drink-desc{font-size:13px;color:var(--muted)}
+.dial{width:220px;height:220px;max-width:72vw;max-height:72vw;margin:20px auto 18px;position:relative;display:grid;place-items:center}
+.dial svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.dial .track{stroke:#39393c;stroke-width:7;fill:none}.dial .progress{stroke:var(--red2);stroke-width:7;stroke-linecap:round;fill:none;transition:stroke-dashoffset .15s linear}
+.time{font-variant-numeric:tabular-nums;font-size:49px;font-weight:720;letter-spacing:-2px;line-height:1}.time-caption{font-size:12px;color:var(--muted);margin-top:7px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{min-height:52px;border-radius:16px;padding:12px 16px;font-weight:750;display:flex;align-items:center;justify-content:center;gap:8px}.primary{background:var(--red);box-shadow:0 8px 20px #c9272c33}.primary:active{background:#aa1e23}.secondary{background:#363639}.wide{width:100%;margin-top:10px}
+.status{min-height:20px;color:var(--muted);font-size:12px;margin-top:13px}
+.drink-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.drink{display:flex;align-items:center;gap:11px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:19px;padding:13px 12px;min-height:76px;transition:border-color .15s,background .15s}
+.drink.active{border-color:var(--red2);background:#351e20}.drink-emoji{height:43px;width:43px;flex:0 0 43px;border-radius:14px;display:grid;place-items:center;background:var(--panel2);font-size:23px}.drink-copy{min-width:0;flex:1}.drink-copy strong{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.drink-copy small{display:block;color:var(--muted);font-size:12px;margin-top:4px}.drink .seconds{font-size:12px;color:#ff9a9d;font-weight:750;white-space:nowrap}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.text-btn{background:none;color:#ff9a9d;font-weight:700;font-size:13px;padding:8px 0}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#171719ed;backdrop-filter:blur(18px);border-top:1px solid #333;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:5}.nav-inner{width:min(620px,100%);display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nav-btn{background:transparent;color:var(--muted);border-radius:14px;padding:8px 4px;font-size:11px;display:grid;gap:4px;justify-items:center}.nav-btn span{font-size:19px}.nav-btn.active{color:#fff;background:#303033}
+.view{display:none}.view.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}.field{display:grid;gap:7px;margin:14px 0}.field label{font-size:13px;color:#ddd}.field input{width:100%;background:#111;border:1px solid #48484b;border-radius:13px;padding:13px;color:#fff}.field-row{display:grid;grid-template-columns:1fr 110px;gap:10px}.hint{font-size:12px;color:var(--muted);line-height:1.5}.list-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.list-item:last-child{border-bottom:0}.list-item .grow{flex:1;min-width:0}.list-item strong{display:block;font-size:14px}.list-item small{display:block;color:var(--muted);margin-top:3px}.mini-btn{border-radius:12px;background:var(--panel2);padding:10px 12px;font-size:13px}.danger{color:#ff9699}.empty{text-align:center;color:var(--muted);padding:24px 8px;font-size:14px}
+.toast{position:fixed;z-index:10;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,12px);background:#f5f5f5;color:#171717;border-radius:14px;padding:12px 16px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(min-width:520px){.drink-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.drink{display:grid;grid-template-columns:43px 1fr;}.drink .seconds{grid-column:2}.dial{margin-top:16px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo" aria-hidden="true">☕</div>
+  <div class="brand"><h1>Dolce Timer</h1><p>Tu café, a tu ritmo.</p></div>
+  <button class="icon-btn" id="backBtn" aria-label="Atrás" title="Atrás">‹</button>
+  <button class="icon-btn" id="homeBtn" aria-label="Inicio" title="Inicio">⌂</button>
+  <button class="icon-btn" id="quickSettings" aria-label="Ajustes" title="Ajustes">⚙</button>
+</header>
+
+<main>
+<section class="view active" id="homeView">
+  <div class="timer-card">
+    <div class="selected-label">TU TEMPORIZADOR</div>
+    <div class="drink-name" id="selectedName">Espresso</div>
+    <div class="drink-desc" id="selectedDesc">Café corto</div>
+    <div class="dial" aria-label="Temporizador">
+      <svg viewBox="0 0 220 220" aria-hidden="true"><circle class="track" cx="110" cy="110" r="99"/><circle class="progress" id="progressRing" cx="110" cy="110" r="99"/></svg>
+      <div><div class="time" id="timeDisplay" role="timer" aria-live="off">00:25</div><div class="time-caption" id="timeCaption">TIEMPO CONFIGURADO</div></div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="startBtn"><span id="startIcon">▶</span><span id="startText">Empezar</span></button>
+      <button class="btn secondary" id="resetBtn">↻ Reiniciar</button>
+    </div>
+    <button class="btn secondary wide" id="editSelectedBtn">✎ Editar tiempo de este café</button>
+    <div class="status" id="statusText" aria-live="polite">Listo para preparar tu café.</div>
+  </div>
+
+  <div class="section-head"><h2>Elige tu café</h2><button class="text-btn" id="manageDrinksBtn">Editar cafés</button></div>
+  <p class="sub">Toca una bebida para cargar su temporizador.</p>
+  <div class="drink-grid" id="drinkGrid"></div>
+</section>
+
+<section class="view" id="manageView">
+  <h2>Tus cafés</h2><p class="sub">Personaliza los nombres y los segundos de extracción.</p>
+  <div class="panel">
+    <div class="field"><label for="drinkNameInput">Nombre del café</label><input id="drinkNameInput" maxlength="40" placeholder="Ej. Espresso intenso"></div>
+    <div class="field"><label for="drinkDescInput">Descripción (opcional)</label><input id="drinkDescInput" maxlength="60" placeholder="Ej. Café corto"></div>
+    <div class="field-row">
+      <div class="field"><label for="drinkSecondsInput">Tiempo (segundos)</label><input id="drinkSecondsInput" type="number" min="1" max="5999" inputmode="numeric" value="25"></div>
+      <div class="field"><label for="drinkEmojiInput">Icono</label><input id="drinkEmojiInput" maxlength="8" value="☕" aria-label="Icono o emoji"></div>
+    </div>
+    <button class="btn primary wide" id="saveDrinkBtn">＋ Guardar café</button>
+    <button class="btn secondary wide" id="cancelEditBtn" hidden>Cancelar edición</button>
+    <p class="hint">Los tiempos son personalizables: consulta las indicaciones de tu bebida y ajusta los segundos a tu gusto. La app no controla la cafetera.</p>
+  </div>
+  <div class="panel" id="manageList"></div>
+</section>
+
+<section class="view" id="settingsView">
+  <h2>Ajustes y datos</h2>
+  <div class="panel">
+    <strong>Guardado automático</strong>
+    <p class="hint">Tus cafés se guardan en el almacenamiento local de este navegador, en este móvil. No se envían a ningún servidor.</p>
+    <div class="list-item"><div class="grow"><strong>Vibrar al terminar</strong><small>Si el navegador y el móvil lo permiten.</small></div><input type="checkbox" id="vibrateToggle" checked aria-label="Vibrar al terminar"></div>
+    <div class="list-item"><div class="grow"><strong>Sonido al terminar</strong><small>Puede requerir que el móvil esté desbloqueado.</small></div><input type="checkbox" id="soundToggle" checked aria-label="Sonido al terminar"></div>
+  </div>
+  <div class="panel">
+    <strong>Copias de seguridad</strong>
+    <p class="hint">Exporta tus cafés a un archivo JSON o importa una copia guardada anteriormente.</p>
+    <button class="btn secondary wide" id="exportBtn">⇩ Exportar mis cafés</button>
+    <label class="btn secondary wide" for="importFile" style="margin-top:10px">⇧ Importar archivo JSON</label><input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+  <div class="panel">
+    <strong>Restablecer aplicación</strong>
+    <p class="hint">Vuelve a la lista de cafés de ejemplo. Esta acción reemplaza tu lista guardada.</p>
+    <button class="btn secondary wide danger" id="restoreBtn">Restaurar cafés de ejemplo</button>
+  </div>
+  <p class="hint" style="text-align:center;padding:8px">Dolce Timer · Temporizador independiente, no oficial de Dolce Gusto.</p>
+</section>
+</main>
+</div>
+
+<nav class="bottom-nav" aria-label="Navegación principal"><div class="nav-inner">
+<button class="nav-btn active" data-view="homeView"><span>◷</span>Temporizador</button>
+<button class="nav-btn" data-view="manageView"><span>☕</span>Mis cafés</button>
+<button class="nav-btn" data-view="settingsView"><span>⚙</span>Ajustes</button>
+</div></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  "use strict";
+  const STORAGE_KEY = "dolceTimer.v1";
+  const defaults = [
+    {id:"espresso",name:"Espresso",desc:"Café corto",seconds:25,emoji:"☕"},
+    {id:"lungo",name:"Lungo",desc:"Café largo",seconds:35,emoji:"🥃"},
+    {id:"americano",name:"Americano",desc:"Café suave",seconds:45,emoji:"☕"},
+    {id:"cappuccino",name:"Cappuccino",desc:"Café con leche",seconds:30,emoji:"🥛"},
+    {id:"latte",name:"Latte Macchiato",desc:"Leche y café",seconds:40,emoji:"🥛"},
+    {id:"chococino",name:"Chococino",desc:"Chocolate",seconds:35,emoji:"🍫"}
+  ];
+  const $ = id => document.getElementById(id);
+  let state = loadState();
+  let selectedId = state.selectedId && state.drinks.some(d=>d.id===state.selectedId) ? state.selectedId : (state.drinks[0]?.id || null);
+  let editId = null, running = false, remaining = getSelected()?.seconds || 25, endAt = 0, interval = null, toastTimeout = null;
+  let audioContext = null;
+
+  function cloneDefaults(){return defaults.map(d=>({...d}));}
+  function loadState(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {drinks:cloneDefaults(),selectedId:"espresso",vibrate:true,sound:true};
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data.drinks)) throw new Error("invalid");
+      const drinks = data.drinks.filter(d=>d && typeof d.name==="string" && Number.isFinite(Number(d.seconds)))
+        .map((d,i)=>({id:String(d.id||("custom-"+i)),name:d.name.slice(0,40),desc:String(d.desc||"").slice(0,60),seconds:clamp(Number(d.seconds),1,5999),emoji:String(d.emoji||"☕").slice(0,8)}));
+      return {drinks,selectedId:data.selectedId,vibrate:data.vibrate!==false,sound:data.sound!==false};
+    } catch {return {drinks:cloneDefaults(),selectedId:"espresso",vibrate:true,sound:true};}
+  }
+  function persist(){try{state.selectedId=selectedId;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{showToast("No se pudo guardar. Revisa el almacenamiento del navegador.");}}
+  function clamp(n,min,max){return Math.min(max,Math.max(min,Math.round(n)));}
+  function getSelected(){return state.drinks.find(d=>d.id===selectedId)||null;}
+  function formatTime(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+  function showToast(msg){const el=$("toast");el.textContent=msg;el.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>el.classList.remove("show"),2400);}
+  function drawRing(value,total){const ring=$("progressRing"),r=99,c=2*Math.PI*r;ring.style.strokeDasharray=String(c);ring.style.strokeDashoffset=String(c*(1-(total?value/total:1)));}
+  function renderAll(){renderSelected();renderGrid();renderManage();$("vibrateToggle").checked=state.vibrate;$("soundToggle").checked=state.sound;}
+  function renderSelected(){
+    const d=getSelected();
+    $("selectedName").textContent=d?d.name:"Añade un café";
+    $("selectedDesc").textContent=d?(d.desc||"Tu café favorito"):"Crea tu primer temporizador en Mis cafés.";
+    $("timeDisplay").textContent=formatTime(remaining);
+    $("timeCaption").textContent=running?"TIEMPO RESTANTE":"TIEMPO CONFIGURADO";
+    $("startBtn").disabled=!d;
+    $("startBtn").style.opacity=d?"1":".5";
+    $("startText").textContent=running?"Pausar":(remaining===0?"Repetir":"Empezar");
+    $("startIcon").textContent=running?"Ⅱ":"▶";
+    $("statusText").textContent=running?"Temporizador en marcha…":(remaining===0?"¡Tiempo terminado! Tu café está listo.":"Listo para preparar tu café.");
+    drawRing(remaining,d?.seconds||remaining||1);
+    $("editSelectedBtn").disabled=!d;
+  }
+  function renderGrid(){
+    const grid=$("drinkGrid");grid.replaceChildren();
+    if(!state.drinks.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1">Todavía no hay cafés. Añade uno desde «Mis cafés».</div>';return;}
+    state.drinks.forEach(d=>{
+      const b=document.createElement("button");b.className="drink"+(d.id===selectedId?" active":"");b.setAttribute("aria-pressed",String(d.id===selectedId));
+      const emoji=document.createElement("span");emoji.className="drink-emoji";emoji.textContent=d.emoji;
+      const copy=document.createElement("span");copy.className="drink-copy";
+      const strong=document.createElement("strong");strong.textContent=d.name;
+      const small=document.createElement("small");small.textContent=d.desc||"Personalizado";
+      const secs=document.createElement("span");secs.className="seconds";secs.textContent=formatTime(d.seconds);
+      copy.append(strong,small);b.append(emoji,copy,secs);
+      b.addEventListener("click",()=>selectDrink(d.id));grid.append(b);
+    });
+  }
+  function renderManage(){
+    const list=$("manageList");list.replaceChildren();
+    if(!state.drinks.length){list.innerHTML='<div class="empty">No hay cafés guardados.</div>';return;}
+    state.drinks.forEach(d=>{
+      const row=document.createElement("div");row.className="list-item";
+      const emoji=document.createElement("span");emoji.textContent=d.emoji;emoji.style.fontSize="24px";
+      const grow=document.createElement("div");grow.className="grow";
+      const strong=document.createElement("strong");strong.textContent=d.name;
+      const small=document.createElement("small");small.textContent=(d.desc?d.desc+" · ":"")+formatTime(d.seconds);
+      grow.append(strong,small);
+      const edit=document.createElement("button");edit.className="mini-btn";edit.textContent="Editar";edit.addEventListener("click",()=>startEdit(d.id));
+      const del=document.createElement("button");del.className="mini-btn danger";del.textContent="✕";del.setAttribute("aria-label","Eliminar "+d.name);del.addEventListener("click",()=>deleteDrink(d.id));
+      row.append(emoji,grow,edit,del);list.append(row);
+    });
+  }
+  function selectDrink(id){if(running)stopTimer(false);selectedId=id;const d=getSelected();remaining=d?.seconds||0;persist();renderAll();showView("homeView");}
+  function stopTimer(resetStatus=true){running=false;if(interval)clearInterval(interval);interval=null;if(resetStatus)renderSelected();}
+  function startTimer(){
+    if(!getSelected())return;
+    if(running){stopTimer();return;}
+    if(remaining<=0)remaining=getSelected().seconds;
+    running=true;endAt=Date.now()+remaining*1000;renderSelected();
+    interval=setInterval(tick,100);
+  }
+  function tick(){
+    remaining=Math.max(0,(endAt-Date.now())/1000);
+    if(remaining<=0){remaining=0;stopTimer(false);renderSelected();finishAlert();return;}
+    $("timeDisplay").textContent=formatTime(remaining);drawRing(remaining,getSelected()?.seconds||remaining);
+  }
+  function finishAlert(){
+    $("statusText").textContent="¡Tiempo terminado! Tu café está listo.";
+    if(state.vibrate && navigator.vibrate)navigator.vibrate([180,80,180]);
+    if(state.sound){
+      try{
+        const Ctx=window.AudioContext||window.webkitAudioContext;
+        if(Ctx){audioContext=audioContext||new Ctx();if(audioContext.state==="suspended")audioContext.resume();const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.connect(gain);gain.connect(audioContext.destination);osc.frequency.value=880;gain.gain.setValueAtTime(.001,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.16,audioContext.currentTime+.03);gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+.45);osc.start();osc.stop(audioContext.currentTime+.48);}
+      }catch{}
+    }
+    showToast("☕ ¡Tiempo terminado! Tu café está listo.");
+  }
+  function resetTimer(){stopTimer(false);remaining=getSelected()?.seconds||0;renderSelected();}
+  function showView(viewId){
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===viewId));
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===viewId));
+    if(viewId==="manageView")renderManage();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function startEdit(id){
+    const d=state.drinks.find(x=>x.id===id);if(!d)return;
+    editId=id;$("drinkNameInput").value=d.name;$("drinkDescInput").value=d.desc;$("drinkSecondsInput").value=d.seconds;$("drinkEmojiInput").value=d.emoji;
+    $("saveDrinkBtn").textContent="Guardar cambios";$("cancelEditBtn").hidden=false;
+    $("drinkNameInput").focus();window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function clearForm(){editId=null;$("drinkNameInput").value="";$("drinkDescInput").value="";$("drinkSecondsInput").value="25";$("drinkEmojiInput").value="☕";$("saveDrinkBtn").textContent="＋ Guardar café";$("cancelEditBtn").hidden=true;}
+  function saveDrink(){
+    const name=$("drinkNameInput").value.trim();const desc=$("drinkDescInput").value.trim();const sec=Number($("drinkSecondsInput").value);const emoji=$("drinkEmojiInput").value.trim()||"☕";
+    if(!name){showToast("Escribe un nombre para el café.");$("drinkNameInput").focus();return;}
+    if(!Number.isFinite(sec)||sec<1||sec>5999){showToast("El tiempo debe estar entre 1 y 5999 segundos.");$("drinkSecondsInput").focus();return;}
+    if(editId){
+      const d=state.drinks.find(x=>x.id===editId);if(!d)return;
+      Object.assign(d,{name,desc,seconds:Math.round(sec),emoji});
+      if(selectedId===editId&&!running)remaining=d.seconds;
+      showToast("Café actualizado.");
+    }else{
+      const id="coffee-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7);
+      state.drinks.push({id,name,desc,seconds:Math.round(sec),emoji});selectedId=id;remaining=Math.round(sec);showToast("Café guardado.");
+    }
+    persist();clearForm();renderAll();
+  }
+  function deleteDrink(id){
+    const d=state.drinks.find(x=>x.id===id);if(!d)return;
+    if(!confirm('¿Eliminar "'+d.name+'"?'))return;
+    state.drinks=state.drinks.filter(x=>x.id!==id);
+    if(selectedId===id){stopTimer(false);selectedId=state.drinks[0]?.id||null;remaining=getSelected()?.seconds||0;}
+    persist();renderAll();showToast("Café eliminado.");
+  }
+  function exportData(){
+    const blob=new Blob([JSON.stringify({app:"Dolce Timer",version:1,drinks:state.drinks,selectedId,vibrate:state.vibrate,sound:state.sound},null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="dolce-timer-cafes.json";document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);showToast("Copia exportada.");
+  }
+  async function importData(file){
+    try{
+      const data=JSON.parse(await file.text());
+      if(!data||!Array.isArray(data.drinks))throw new Error("Formato no válido");
+      const drinks=data.drinks.filter(d=>d&&typeof d.name==="string"&&Number.isFinite(Number(d.seconds))&&Number(d.seconds)>=1&&Number(d.seconds)<=5999)
+        .map((d,i)=>({id:String(d.id||("imported-"+i+"-"+Date.now())),name:d.name.trim().slice(0,40)||"Café",desc:String(d.desc||"").slice(0,60),seconds:Math.round(Number(d.seconds)),emoji:String(d.emoji||"☕").slice(0,8)}));
+      if(!confirm("Se importarán "+drinks.length+" cafés y se reemplazará la lista actual. ¿Continuar?"))return;
+      stopTimer(false);state.drinks=drinks;state.vibrate=data.vibrate!==false;state.sound=data.sound!==false;selectedId=drinks.some(d=>d.id===data.selectedId)?data.selectedId:(drinks[0]?.id||null);remaining=getSelected()?.seconds||0;persist();renderAll();showToast("Cafés importados.");
+    }catch{showToast("No se pudo importar. Comprueba que sea un JSON de Dolce Timer.");}
+    $("importFile").value="";
+  }
+  $("startBtn").addEventListener("click",startTimer);
+  $("resetBtn").addEventListener("click",resetTimer);
+  $("editSelectedBtn").addEventListener("click",()=>{const d=getSelected();if(d){showView("manageView");startEdit(d.id);}});
+  $("manageDrinksBtn").addEventListener("click",()=>showView("manageView"));
+  $("quickSettings").addEventListener("click",()=>showView("settingsView"));
+  $("homeBtn").addEventListener("click",()=>showView("homeView"));
+  $("backBtn").addEventListener("click",()=>{
+    const active=document.querySelector(".view.active")?.id;
+    if(active==="settingsView"||active==="manageView")showView("homeView");
+    else if(document.referrer && history.length>1)history.back();
+    else showToast("Ya estás en la pantalla principal.");
+  });
+  document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+  $("saveDrinkBtn").addEventListener("click",saveDrink);
+  $("cancelEditBtn").addEventListener("click",clearForm);
+  $("vibrateToggle").addEventListener("change",e=>{state.vibrate=e.target.checked;persist();});
+  $("soundToggle").addEventListener("change",e=>{state.sound=e.target.checked;persist();});
+  $("exportBtn").addEventListener("click",exportData);
+  $("importFile").addEventListener("change",e=>{if(e.target.files?.[0])importData(e.target.files[0]);});
+  $("restoreBtn").addEventListener("click",()=>{if(!confirm("¿Restaurar los cafés de ejemplo? Se reemplazará tu lista actual."))return;stopTimer(false);state.drinks=cloneDefaults();state.vibrate=true;state.sound=true;selectedId="espresso";remaining=25;clearForm();persist();renderAll();showToast("Cafés de ejemplo restaurados.");});
+  document.addEventListener("visibilitychange",()=>{if(document.hidden&&running){/* uses an absolute end time, so the countdown catches up when visible */}else if(!document.hidden&&running)tick();});
+  if ("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")) {
+    window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+  }
+  renderAll();
+})();
+</script>
+</body>
+</html>
