@@ -1,4 +1,4 @@
-const CACHE_NAME = "dolce-timer-shell-v1";
+const CACHE_NAME = "dolce-timer-shell-v2";
 const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest", "/cafe/icons/icon-192.png", "/cafe/icons/icon-512.png"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
