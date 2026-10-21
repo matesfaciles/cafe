@@ -15,8 +15,15 @@ Aplicación web progresiva (PWA) para móviles y escritorio. Los cafés se guard
 - PC/Chrome o Edge: usa el icono de instalación de la barra de direcciones o menú → Instalar página como aplicación.
 - iPhone/iPad: Safari → Compartir → Añadir a pantalla de inicio.
 
+## Vincular dispositivos (sincronización P2P)
+- En la pestaña **Vincular** de la app verás tu PIN de 8 dígitos. El código completo de PeerJS es `Dolce-Timer-<id de 64 caracteres>-<PIN>`; la app lo compone sola, solo hay que teclear los 8 dígitos (o escanear el QR del otro móvil).
+- Ambos dispositivos deben tener la app abierta y conexión a internet (usa la red pública de señalización de PeerJS; los datos viajan cifrados de móvil a móvil).
+- Se sincronizan en tiempo real: stock, cápsulas, niveles/máquina, ajustes, widget, historial y el cronómetro (se ve avanzar en todos los móviles).
+- Si un dispositivo se reconecta o cambia de PIN, la app reintenta sola con los últimos compañeros conocidos.
+- Nota: PeerJS y la librería QR se cargan desde unpkg.com; la primera vez hace falta internet. Después quedan cacheados por el service worker para uso offline (aunque la vinculación en sí requiere red).
+
 ## Comportamiento
 - En modo instalado (`display: standalone`) no se muestra la barra de URL del navegador. Los controles Atrás e Inicio están dentro de la app.
 - En PC, el diseño se adapta a una vista más ancha.
-- Los datos son locales al navegador/dispositivo. Si alguien abre la app en su propio móvil, tendrá su propia lista. No hay sincronización entre dispositivos ni cuentas.
+- Por defecto los datos son locales a cada navegador/dispositivo; con la función «Vincular» se sincronizan entre varios móviles vía WebRTC (PeerJS), sin cuentas ni servidor propio.
 - Los tiempos incluidos son ejemplos; configura los segundos adecuados para tus bebidas.
