@@ -2305,7 +2305,32 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
                 }
             });
             if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-            if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+            /* Service worker: con el sw.js actual (network-first) la app SIEMPRE carga la
+             * última versión publicada; solo si no hay internet se sirve la copia cacheada.
+             * Además comprobamos en segundo plano si hay una versión nueva y avisamos con
+             * un toast + recarga automática al cerrar la app. */
+            if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+                addEventListener("load", () => {
+                    navigator.serviceWorker.register("./sw.js").then(reg => {
+                        const check = () => reg.update().catch(() => {});
+                        check();
+                        setInterval(check, 5 * 60 * 1000);          // comprobar cada 5 min
+                        document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+                        reg.addEventListener("updatefound", () => {
+                            const nw = reg.installing;
+                            if (!nw) return;
+                            nw.addEventListener("statechange", () => {
+                                if (nw.state === "installed" && navigator.serviceWorker.controller) {
+                                    toast("Nueva versión disponible: se aplicará al volver a abrir la app.");
+                                    const reload = () => { try { reg.waiting && reg.waiting.postMessage({ type: "SKIP_WAITING" }); } catch {} };
+                                    if (document.hidden) reload();                   // si está de fondo, actualizar ya
+                                    else addEventListener("pagehide", reload, { once: true }); // si no, al cerrar
+                                }
+                            });
+                        });
+                    }).catch(() => {});
+                });
+            }
             if (WM) {
                 bootWidget()
             } else {
