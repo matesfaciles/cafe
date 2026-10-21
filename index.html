@@ -9,12 +9,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dolce Timer">
-    <link rel="manifest" href="/cafe/manifest.webmanifest">
-    <link rel="icon" href="/cafe/icons/icon-192.png" type="image/png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icons/icon-192.png" type="image/png">
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
     <meta property="og:title" content="Dolce Timer">
     <meta property="og:description" content="Temporizador, stock y escáner de cápsulas para tu Dolce Gusto manual.">
-    <link rel="apple-touch-icon" href="/cafe/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
     <meta name="description" content="Temporizador y stock de cápsulas para tu Dolce Gusto manual.">
     <title>Dolce Timer</title>
     <!-- Google Analytics: pega aquí tu script completo. Queda bloqueado hasta que el usuario acepte en el banner. -->
@@ -528,7 +528,7 @@
             max-width: 620px;
             margin: auto;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 4px
         }
 
@@ -716,6 +716,72 @@
             min-height: 180px
         }
 
+        .pinbox {
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            text-align: center;
+            background: #0f0c0a;
+            border: 1px dashed #6b594d;
+            border-radius: 16px;
+            padding: 16px 8px;
+            margin: 10px 0;
+            color: #ffd9a8
+        }
+
+        #qrWrap {
+            display: grid;
+            place-items: center;
+            background: #fff;
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 10px
+        }
+
+        #qrC {
+            width: 220px;
+            height: 220px;
+            image-rendering: pixelated
+        }
+
+        .peers {
+            list-style: none;
+            margin: 8px 0;
+            padding: 0
+        }
+
+        .peers li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--ln);
+            font-size: 14px
+        }
+
+        .peers li:last-child {
+            border: 0
+        }
+
+        .peers .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--warn);
+            flex: 0 0 auto
+        }
+
+        .peers .dot.on {
+            background: var(--ok)
+        }
+
+        .peers span.grow {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
         @media(min-width:760px) {
             body {
                 background: radial-gradient(ellipse at top, #2a1f19, #120e0c 60%)
@@ -825,7 +891,7 @@
 <body>
     <div class="app">
         <header>
-            <div class="logo" aria-hidden="true"><i class="fa-solid fa-mug-hot"></i></div>
+            <div class="logo" aria-hidden="true">☕</div>
             <div class="brand">
                 <h1>Dolce Timer</h1>
                 <p>Tu café, a tu medida.</p>
@@ -854,8 +920,8 @@
                             <div class="stg" id="stg"></div>
                         </div>
                     </div>
-                    <div class="controls"><button class="btn primary" id="go"></button><button class="btn secondary" id="rst"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button></div>
-                    <button class="btn secondary wide" id="edSel"><i class="fa-solid fa-sliders"></i> Ajustar niveles o mililitros</button>
+                    <div class="controls"><button class="btn primary" id="go"></button><button class="btn secondary" id="rst">↺ Reiniciar</button></div>
+                    <button class="btn secondary wide" id="edSel">🎚️ Ajustar niveles o mililitros</button>
                     <div class="status" id="status" aria-live="polite"></div>
                 </div>
                 <div>
@@ -876,12 +942,39 @@
                         <div class="sg" id="sg"></div>
                     </div>
                     <div class="field-row">
-                        <div class="field"><label for="qq">Cantidad</label><input id="qq" type="number" min="1" max="999" inputmode="numeric" value="16"></div><button class="btn primary" id="addS"><i class="fa-solid fa-plus"></i> Añadir</button>
+                        <div class="field"><label for="qq">Cantidad</label><input id="qq" type="number" min="1" max="999" inputmode="numeric" value="16"></div><button class="btn primary" id="addS">➕ Añadir</button>
                     </div>
-                    <button class="btn secondary wide" id="scan" style="margin:0 0 10px"><i class="fa-solid fa-barcode"></i> Escanear código de barras</button>
+                    <button class="btn secondary wide" id="scan" style="margin:0 0 10px">📷 Escanear código de barras</button>
                     <p class="hint">Escribe el nombre y se rellenan solos sus niveles. En bebidas con leche cuenta tazas: 1 taza = 1 cápsula de café + 1 de leche.</p>
                 </div>
                 <div class="panel" id="sList"></div>
+            </section>
+
+            <section class="view" id="syncView">
+                <h2>Vincular dispositivos</h2>
+                <p class="sub">Comparte stock, cronómetro, cápsulas y ajustes en tiempo real con otros móviles por conexión directa (P2P). Solo necesitas el PIN de 8 dígitos del otro dispositivo.</p>
+                <div class="panel"><strong>Tu código de vinculación</strong>
+                    <div class="pinbox" id="pinBox">—</div>
+                    <p class="hint" id="pinHint">El código completo es <b>Dolce-Timer-…-XXXXXXXX</b>. Aquí solo ves los 8 dígitos; la app añade el resto al conectarse.</p>
+                    <div class="field-row">
+                        <button class="btn secondary" id="newPin"><i aria-hidden="true">🆕</i> Nuevo PIN</button>
+                        <button class="btn secondary" id="qrBtn"><i aria-hidden="true">🖼️</i> Ver QR</button>
+                    </div>
+                    <div id="qrWrap" hidden><canvas id="qrC" width="240" height="240" aria-label="Código QR de vinculación"></canvas></div>
+                </div>
+                <div class="panel"><strong>Conectarte con otro dispositivo</strong>
+                    <div class="field"><label for="pinIn">PIN de 8 dígitos</label><input id="pinIn" inputmode="numeric" autocomplete="off" placeholder="Ej. 48190326" maxlength="8"></div>
+                    <div class="field-row">
+                        <button class="btn primary wide" id="connBtn" style="margin:0"><i aria-hidden="true">🔗</i> Conectar</button>
+                        <button class="btn secondary" id="scanQr"><i aria-hidden="true">📷</i> Escanear QR</button>
+                    </div>
+                </div>
+                <div class="panel"><strong>Estado</strong>
+                    <p class="hint" id="syncStat">Sin vincular. Los cambios se guardan solo en este móvil.</p>
+                    <ul class="peers" id="peerList"></ul>
+                    <button class="btn secondary wide danger" id="discBtn" hidden>Desconectar todos</button>
+                </div>
+                <p class="hint">La comunicación usa la red pública de señalización de PeerJS (WebRTC): los datos viajan cifrados entre dispositivos y no pasan por ningún servidor propio. Mantén la app abierta durante la preparación para que el cronómetro se vea en todos.</p>
             </section>
 
             <section class="view" id="lvView">
@@ -925,18 +1018,18 @@
                 </div>
                 <div class="panel"><strong>Widget de inicio</strong>
                     <p class="hint">Elige hasta 3 cápsulas. Se crea un enlace minimalista que, al tocar una cápsula, arranca su temporizador.</p>
-                    <div id="wid"></div><button class="btn secondary wide" id="wlink"><i class="fa-solid fa-link"></i> Crear enlace del widget</button>
+                    <div id="wid"></div><button class="btn secondary wide" id="wlink">🔗 Crear enlace del widget</button>
                     <p class="hint">Ábrelo en tu navegador y usa «Añadir a pantalla de inicio» (iPhone: Compartir; Android: menú ⋮). Un widget nativo no es posible desde una web, y el enlace solo funciona en este móvil.</p>
                 </div>
                 <div class="panel"><strong>Guardado</strong>
                     <p class="hint">Todo se guarda en este móvil (stock, cafés, niveles, historial y un temporizador en marcha). Exporta una copia de vez en cuando.</p>
-                    <button class="btn secondary wide" id="pst">Proteger el almacenamiento</button><button class="btn secondary wide" id="exp"><i class="fa-solid fa-download"></i> Exportar copia</button><label class="btn secondary wide" for="imp"><i class="fa-solid fa-upload"></i> Importar copia</label><input type="file" id="imp" accept="application/json,.json" hidden>
+                    <button class="btn secondary wide" id="pst">Proteger el almacenamiento</button><button class="btn secondary wide" id="exp">⬇️ Exportar copia</button><label class="btn secondary wide" for="imp">⬆️ Importar copia</label><input type="file" id="imp" accept="application/json,.json" hidden>
                 </div>
                 <div class="panel"><strong>Últimos cafés</strong>
                     <div id="hist"></div>
                 </div>
                 <div class="panel"><button class="btn secondary wide danger" id="rest">Restaurar todo de fábrica</button></div>
-                <div class="panel"><strong>Privacidad</strong><button class="btn secondary wide" onclick="dolceCookies()"><i class="fa-solid fa-cookie-bite"></i> Cambiar preferencias de cookies</button>
+                <div class="panel"><strong>Privacidad</strong><button class="btn secondary wide" onclick="dolceCookies()">🍪 Cambiar preferencias de cookies</button>
                     <p class="hint">Tus datos se quedan en tu dispositivo; no hay cuentas ni servidor. Solo al escanear un código de barras se envía ese número a Open Food Facts para buscar el nombre.</p>
                 </div>
                 <p class="hint" style="text-align:center">Dolce Timer es independiente y no oficial. Los niveles de cada cápsula vienen de listados públicos de 2021 y de medidas de usuarios.</p>
@@ -949,7 +1042,7 @@
     </div>
     <nav class="nav" aria-label="Navegación principal">
         <div>
-            <button class="nb active" data-v="homeView"><span><i class="fa-solid fa-stopwatch"></i></span>Temporizador</button><button class="nb" data-v="stockView"><span><i class="fa-solid fa-boxes-stacked"></i></span>Stock</button><button class="nb" data-v="lvView"><span><i class="fa-solid fa-gauge-high"></i></span>Niveles</button><button class="nb" data-v="setView"><span><i class="fa-solid fa-gear"></i></span>Ajustes</button>
+            <button class="nb active" data-v="homeView"><span>⏱️</span>Temporizador</button><button class="nb" data-v="stockView"><span>📦</span>Stock</button><button class="nb" data-v="syncView"><span>🔗</span>Vincular</button><button class="nb" data-v="lvView"><span>🎛️</span>Niveles</button><button class="nb" data-v="setView"><span>⚙️</span>Ajustes</button>
         </div>
     </nav>
     <dialog id="dlg" aria-label="Editar cápsula"></dialog>
@@ -986,8 +1079,9 @@
                     t: 0
                 }
             });
-            const em = n => /ice|iced|cold|nestea/i.test(n) ? "fa-snowflake" : /choco|mocha|nesquik/i.test(n) ? "fa-cookie-bite" : /té|tea|matcha|marrakesh|macaron|citrus/i.test(n) ? "fa-leaf" : /leche|latte|cappuccino|cortado|macchiato/i.test(n) ? "fa-glass-water" : "fa-mug-hot";
-            const ico = e => /^fa-/.test(e) ? `<i class="fa-solid ${esc(e)}"></i>` : esc(e);
+            const em = n => /ice|iced|cold|nestea/i.test(n) ? "❄️" : /choco|mocha|nesquik/i.test(n) ? "🍪" : /té|tea|matcha|marrakesh|macaron|citrus/i.test(n) ? "🍃" : /leche|latte|cappuccino|cortado|macchiato/i.test(n) ? "🥛" : "☕";
+            const FAE = {"fa-mug-hot":"☕","fa-snowflake":"❄️","fa-leaf":"🍃","fa-glass-water":"🥛","fa-cookie-bite":"🍪"};
+const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
             // Catálogo Dolce Gusto: nombre|niveles (Etiqueta+nivel por cápsula, en orden de preparación). Fuente: listado público de Nescafé Dolce Gusto (2021) y medidas de usuarios.
             const CAT = "Ristretto|1;Ristretto Ardenza|1;Espresso|2;Espresso Descafeinado|2;Espresso Barista|1;Espresso Intenso|2;Espresso Caramel|2;Cortado|3;Cortado Descafeinado|3;Doppio Espresso|3;Americano|7;Americano Intenso|7;Lungo|4;Lungo Descafeinado|4;Lungo Intenso|4;Lungo Mild|4;Grande|7;Grande Intenso|7;Grande Mild|7;Café con leche|6;Café con leche Descafeinado|6;Café con leche Intenso|6;Cold Brew|6;Iced Coffee|3;Cappuccino|Leche6+Café1;Cappuccino Light|Leche6+Café1;Cappuccino Intenso|Leche6+Café1;Cappuccino Ice|Leche3+Café3;Latte Macchiato|Leche5+Café2;Latte Macchiato Light|Leche5+Café2;Latte Macchiato Caramel|Leche5+Café2;Latte Macchiato Vainilla|Leche5+Café2;Latte Macchiato Sin azúcar|Leche5+Café2;Chococino|Chocolate3+Leche3;Chococino Caramel|Chocolate3+Leche3;Mocha|Café3+Leche3;Chai Tea Latte|Té3+Leche3;Tea Latte|Té3+Leche3;Nesquik|5;Marrakesh Style Tea|6;Citrus Honey Black Tea|6;Macaron Green Tea|6;Nestea Limón|7;Nestea Melocotón|7;Uji Matcha|3".split(";").map(x => {
                 const [n, sp] = x.split("|");
@@ -1118,14 +1212,17 @@
                 ed = null,
                 tt = null;
 
-            function save() {
+            function save(bcast) {
+                S.ts = Date.now();
                 const j = JSON.stringify(S);
                 try {
                     localStorage.setItem(K, j)
                 } catch {
                     toast("No se pudo guardar. Revisa el almacenamiento del navegador.")
                 }
-                idb("w", j)
+                idb("w", j);
+                if (window.SYNC && window.SYNC.markLocal) window.SYNC.markLocal(S.ts || Date.now());
+                if (bcast !== false && window.SYNC) window.SYNC.broadcast(j)
             }
             const it = () => S.items.find(i => i.id === S.sel) || S.items[0] || null;
             const mlOf = s => s.m === "l" ? LV[s.v - 1] : s.v;
@@ -1268,7 +1365,8 @@
                 clearInterval(tm);
                 S.run = null;
                 S.sel = id;
-                begin(0)
+                begin(0);
+                if (window.SYNC) window.SYNC.broadcast(JSON.stringify(S))
             }
 
             function rQa() {
@@ -1307,7 +1405,7 @@
                 if (!S.set.not || !("Notification" in window) || Notification.permission !== "granted") return;
                 const o = {
                     body: b,
-                    icon: "/cafe/icons/icon-192.png",
+                    icon: "./icons/icon-192.png",
                     tag: "dolce-timer"
                 };
                 (navigator.serviceWorker ? navigator.serviceWorker.getRegistration() : Promise.resolve()).then(r => r ? r.showNotification(t, o) : new Notification(t, o)).catch(() => {})
@@ -1456,15 +1554,26 @@
                 clearInterval(tm);
                 tm = setInterval(tick, 100)
             }
+            /* Reenvío ligero del estado del cronómetro a los dispositivos vinculados */
+            let lastFwd = 0;
+
+            function fwdRun() {
+                if (!window.SYNC || !window.SYNC.connected()) return;
+                const now = Date.now();
+                if (now - lastFwd < 400) return;
+                lastFwd = now;
+                window.SYNC.broadcast(JSON.stringify(S))
+            }
 
             function tick() {
                 const r = S.run;
                 if (!r || r.st !== "run") return;
                 r.rem = Math.max(0, (r.end - Date.now()) / 1e3);
                 const c = Math.ceil(r.rem);
-                if (S.set.tick && c > 0 && c <= 3 && c !== lt) {
+                if (c !== lt) {
                     lt = c;
-                    beep(660, .08)
+                    fwdRun();
+                    if (S.set.tick && c > 0 && c <= 3) beep(660, .08)
                 }
                 if (r.rem <= 0) done();
                 else rT()
@@ -1521,22 +1630,25 @@
                 const r = S.run,
                     x = it();
                 if (!x) return;
-                if (!r || r.st === "done" || r.id !== x.id) begin(0);
+                const b0 = () => { if (window.SYNC) window.SYNC.broadcast(JSON.stringify(S)) };
+                if (!r || r.st === "done" || r.id !== x.id) { begin(0); b0() }
                 else if (r.st === "run") {
                     r.rem = Math.max(0, (r.end - Date.now()) / 1e3);
                     r.st = "pause";
                     clearInterval(tm);
                     free();
                     save();
-                    rT()
+                    rT();
+                    b0()
                 } else if (r.st === "pause") {
                     r.end = Date.now() + r.rem * 1e3;
                     r.st = "run";
                     hold();
                     loop();
                     save();
-                    rT()
-                } else begin(r.i)
+                    rT();
+                    b0()
+                } else { begin(r.i); b0() }
             }
 
             function reset() {
@@ -1544,12 +1656,14 @@
                 free();
                 S.run = null;
                 save();
-                rT()
+                rT();
+                if (window.SYNC) window.SYNC.broadcast(JSON.stringify(S))
             }
 
             function rT() {
                 const x = it(),
                     r = S.run && x && S.run.id === x.id ? S.run : null;
+                if (r && (r.st === "run" || r.st === "wait") && !tm) { loop(); hold() }
                 $("go").disabled = !x;
                 $("edSel").disabled = !x;
                 if (!x) {
@@ -1558,7 +1672,7 @@
                     $("time").textContent = "00:00";
                     $("cap").textContent = "";
                     $("stg").textContent = "";
-                    $("go").innerHTML = '<i class="fa-solid fa-play"></i> Empezar';
+                    $("go").innerHTML = '▶️ Empezar';
                     drawGlass([], [], 220);
                     return
                 }
@@ -1579,11 +1693,11 @@
                 } [stt];
                 $("stg").textContent = (n > 1 ? "Fase " + (i + 1) + " de " + n + ", " + s.l.toLowerCase() + ". " : "") + (s.m === "l" ? "Nivel " + s.v + ", " : "") + mlOf(s) + " ml";
                 $("go").innerHTML = {
-                    idle: '<i class="fa-solid fa-play"></i> Empezar',
-                    run: '<i class="fa-solid fa-pause"></i> Pausar',
-                    pause: '<i class="fa-solid fa-play"></i> Continuar',
-                    wait: '<i class="fa-solid fa-play"></i> Fase ' + (i + 1) + ": " + esc(s.l),
-                    done: '<i class="fa-solid fa-rotate-right"></i> Otra vez'
+                    idle: '▶️ Empezar',
+                    run: '⏸️ Pausar',
+                    pause: '▶️ Continuar',
+                    wait: '▶️ Fase ' + (i + 1) + ": " + esc(s.l),
+                    done: '🔄 Otra vez'
                 } [stt];
                 const po = x.st.map((q, k) => {
                     const m = mlOf(q);
@@ -1677,7 +1791,7 @@
                 const name = $("qn").value.trim(),
                     q = Math.round(+$("qq").value);
                 if (!name) return toast("Escribe el nombre de la cápsula.");
-                if (!(q > 0)) return toast("Indica una cantidad.");
+                if (!(q > 0 && q <= 999)) return toast("Cantidad no válida: entre 1 y 999.");
                 let x = S.items.find(i => norm(i.name) === norm(name)),
                     custom = false;
                 if (!x) {
@@ -1735,7 +1849,7 @@
                     n = x.st.length;
                 $("dlg").innerHTML = `<h2 style="margin-top:0">Editar cápsula</h2>
 <div class="field"><label>Nombre</label><input data-f="name" maxlength="40" value="${esc(x.name)}"></div>
-<div class="field-row"><div class="field"><label>Marca (opcional)</label><input data-f="brand" maxlength="30" value="${esc(x.brand)}" placeholder="Ej. Marcilla"></div><div class="field"><label>Icono (emoji o fa-…)</label><input data-f="e" maxlength="8" value="${esc(x.e)}"></div></div>
+<div class="field-row"><div class="field"><label>Marca (opcional)</label><input data-f="brand" maxlength="30" value="${esc(x.brand)}" placeholder="Ej. Marcilla"></div><div class="field"><label>Icono (emoji)</label><input data-f="e" maxlength="4" value="${esc(x.e)}"></div></div>
 ${x.st.map((s,i)=>`<div class="stbox"><div class="field" style="margin-top:0"><label>${n>1?"Cápsula "+(i+1):"Cápsula"}</label><input data-f="lab" data-i="${i}" maxlength="20" value="${esc(s.l)}"></div>
 <div class="seg"><button data-a="m" data-i="${i}" data-m="l" class="${s.m==="l"?"on":""}">Niveles</button><button data-a="m" data-i="${i}" data-m="ml" class="${s.m==="ml"?"on":""}">Mililitros</button></div>
 ${s.m==="l"?`<div class="chips">${[1,2,3,4,5,6,7].map(v=>`<button data-a="lv" data-i="${i}" data-v="${v}" class="${s.v===v?"on":""}" aria-label="Nivel ${v}">${v}</button>`).join("")}</div>`:`<div class="field"><input data-f="v" data-i="${i}" type="number" min="10" max="400" step="5" inputmode="numeric" value="${s.v}" aria-label="Mililitros"></div>`}
@@ -1775,6 +1889,7 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
                 else if (a === "del") {
                     if (!confirm('¿Eliminar "' + ed.name + '"?')) return;
                     S.items = S.items.filter(q => q.id !== ed.id);
+                    S.wid = S.wid.filter(w => S.items.some(i => i.id === w));
                     if (S.run && S.run.id === ed.id) reset();
                     if (S.sel === ed.id) S.sel = null;
                     save();
@@ -1986,6 +2101,7 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
                 if (j) {
                     try {
                         S = mig(JSON.parse(j));
+                        S.ts = Math.max(S.ts || 0, +JSON.parse(j).ts || 0);
                         S.run = null;
                         rAll()
                     } catch {}
@@ -1993,11 +2109,34 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
             });
             if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
             if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-            if (WM) document.body.classList.add("wm");
+            if (WM) {
+                document.body.classList.add("wm");
+                const nb = document.querySelector('.nb[data-v="syncView"]');
+                if (nb) nb.remove()
+            }
             rAll();
             if (P.get("go") && S.items.some(i => i.id === P.get("go"))) quick(P.get("go"));
+            /* Puente con sync.js: compartir y aplicar el estado entre dispositivos vinculados */
+            window.__dolceState = () => JSON.stringify(S);
+            window.__dolceApply = raw => {
+                try {
+                    const d = JSON.parse(raw);
+                    if (!d || !Array.isArray(d.items)) return false;
+                    const mine = S.run && (S.run.st === "run" || S.run.st === "wait") ? S.run : null;
+                    const theirs = d.run && (d.run.st === "run" || d.run.st === "wait") ? d.run : null;
+                    if (mine && (!theirs || (+d.ts || 0) < (S.ts || 0))) d.run = mine;   // protejo mi café en marcha frente a datos viejos
+                    S = mig(d);
+                    if (!S.sel || !S.items.some(i => i.id === S.sel)) S.sel = S.items[0] ? S.items[0].id : null;
+                    if (S.run && S.run.st === "run") { loop(); hold() } else { clearInterval(tm); tm = null; free() }
+                    save(false);
+                    rAll();
+                    return true
+                } catch { return false }
+            };
         })();
     </script>
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+    <script src="./sync.js" defer></script>
     <script>
         (() => {
             const K = "dolceTimer.cookies",
