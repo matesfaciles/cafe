@@ -1025,7 +1025,7 @@
                 <p class="sub">Comparte stock, cronómetro, cápsulas y ajustes en tiempo real con otros móviles por conexión directa (P2P). Solo necesitas el PIN de 8 dígitos del otro dispositivo.</p>
                 <div class="panel"><strong>Tu código de vinculación</strong>
                     <div class="pinbox" id="pinBox">—</div>
-                    <p class="hint" id="pinHint">El código completo es <b>Dolce-Timer-…-XXXXXXXX</b>. Aquí solo ves los 8 dígitos; la app añade el resto al conectarse.</p>
+                    <p class="hint" id="pinHint">Todos los dispositivos comparten la misma base <b>dolce-timer-…</b>; lo único que cambia son estos 8 dígitos. La app añade el resto automáticamente al conectar.</p>
                     <div class="field-row">
                         <button class="btn secondary" id="newPin"><i class="fa-solid fa-shuffle" aria-hidden="true"></i>Nuevo PIN</button>
                         <button class="btn secondary" id="qrBtn"><i class="fa-solid fa-qrcode" aria-hidden="true"></i>Ver QR</button>
@@ -2318,9 +2318,21 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
                 try {
                     const d = JSON.parse(raw);
                     if (!d || !Array.isArray(d.items)) return false;
+                    /* Si los relojes de ambos móviles están desincronizados, un estado remoto
+                     * puede llegar con una marca de tiempo "del futuro". Lo normalizamos al
+                     * instante local más reciente para que la próxima edición local siempre
+                     * gane el conflicto y no se bloquee la sincronización. */
+                    const skew = Math.max(0, (+d.ts || 0) - Date.now());
+                    if (skew > 5000) S.ts = Math.max(S.ts || 0, Date.now() + skew);
                     const mine = S.run && (S.run.st === "run" || S.run.st === "wait") ? S.run : null;
                     const theirs = d.run && (d.run.st === "run" || d.run.st === "wait") ? d.run : null;
-                    if (mine && (!theirs || (+d.ts || 0) < (S.ts || 0))) d.run = mine;   // protejo mi café en marcha frente a datos viejos
+                    if (mine && theirs && mine.id === theirs.id) {
+                        /* El mismo café en marcha en los dos sitios: gana quien lleve menos
+                         * tiempo restante (el temporizador real va más adelantado). */
+                        d.run = (theirs.rem <= mine.rem) ? theirs : mine;
+                    } else if (mine && (!theirs || (+d.ts || 0) < (S.ts || 0))) {
+                        d.run = mine;   // protejo mi café en marcha frente a datos viejos
+                    }
                     S = mig(d);
                     if (!S.sel || !S.items.some(i => i.id === S.sel)) S.sel = S.items[0] ? S.items[0].id : null;
                     if (S.run && S.run.st === "run") { loop(); hold() } else { clearInterval(tm); tm = null; free() }
