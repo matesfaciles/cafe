@@ -11,7 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="Dolce Timer">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="./icons/icon-192.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js" defer></script>
     <meta property="og:title" content="Dolce Timer">
     <meta property="og:description" content="Temporizador, stock y escáner de cápsulas para tu Dolce Gusto manual.">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -88,6 +90,21 @@
             display: grid;
             place-items: center;
             font-size: 24px
+        }
+
+        .fa-icon,
+        .nb i {
+            display: inline-block;
+            text-align: center;
+            line-height: 1
+        }
+
+        .btn i,
+        .mini i,
+        .text-btn i,
+        h2 i,
+        strong i {
+            margin-right: 4px
         }
 
         .brand {
@@ -880,10 +897,62 @@
             color: #1a1411
         }
 
+        .updB {
+            position: fixed;
+            z-index: 25;
+            bottom: calc(96px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f6eee6;
+            color: #1a1411;
+            border-radius: 16px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 10px 30px #0008;
+            max-width: calc(100% - 32px)
+        }
+
+        .updB[hidden] {
+            display: none
+        }
+
+        .updB button {
+            border-radius: 11px;
+            padding: 8px 12px;
+            background: #b3151a;
+            color: #fff
+        }
+
+        .offDot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--warn);
+            display: inline-block;
+            margin-right: 6px
+        }
+
         @media(min-width:760px) {
             .ck {
                 bottom: 16px
             }
+        }
+
+        .cntChip {
+            display: inline-block;
+            margin-top: 8px;
+            background: var(--p2);
+            border: 1px solid var(--ln);
+            border-radius: 99px;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--warn);
+            font-variant-numeric: tabular-nums
         }
     </style>
 </head>
@@ -891,12 +960,13 @@
 <body>
     <div class="app">
         <header>
-            <div class="logo" aria-hidden="true">☕</div>
+            <div class="logo" aria-hidden="true"><i class="fa-solid fa-mug-hot"></i></div>
             <div class="brand">
                 <h1>Dolce Timer</h1>
                 <p>Tu café, a tu medida.</p>
             </div><button class="pill" id="pill" hidden></button>
         </header>
+        <div class="updB" id="updBar" hidden><span>Hay una versión nueva disponible.</span><button id="updBtn">Actualizar</button></div>
         <main>
             <section class="view active" id="homeView">
                 <div class="qa" id="qa"></div>
@@ -920,8 +990,8 @@
                             <div class="stg" id="stg"></div>
                         </div>
                     </div>
-                    <div class="controls"><button class="btn primary" id="go"></button><button class="btn secondary" id="rst">↺ Reiniciar</button></div>
-                    <button class="btn secondary wide" id="edSel">🎚️ Ajustar niveles o mililitros</button>
+                    <div class="controls"><button class="btn primary" id="go"></button><button class="btn secondary" id="rst"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>Reiniciar</button></div>
+                    <button class="btn secondary wide" id="edSel"><i class="fa-solid fa-sliders" aria-hidden="true"></i>Ajustar niveles o mililitros</button>
                     <div class="status" id="status" aria-live="polite"></div>
                 </div>
                 <div>
@@ -934,7 +1004,7 @@
 
             <section class="view" id="stockView">
                 <div class="section-head">
-                    <h2>Tu stock</h2><button class="text-btn" id="buy">Copiar lista de compra</button>
+                    <h2>Tu stock</h2><button class="text-btn" id="buy"><i class="fa-regular fa-clipboard" aria-hidden="true"></i>Copiar lista de compra</button>
                 </div>
                 <p class="sub" id="stat"></p>
                 <div class="panel">
@@ -942,9 +1012,9 @@
                         <div class="sg" id="sg"></div>
                     </div>
                     <div class="field-row">
-                        <div class="field"><label for="qq">Cantidad</label><input id="qq" type="number" min="1" max="999" inputmode="numeric" value="16"></div><button class="btn primary" id="addS">➕ Añadir</button>
+                        <div class="field"><label for="qq">Cantidad</label><input id="qq" type="number" min="1" max="999" inputmode="numeric" value="16"></div><button class="btn primary" id="addS"><i class="fa-solid fa-plus" aria-hidden="true"></i>Añadir</button>
                     </div>
-                    <button class="btn secondary wide" id="scan" style="margin:0 0 10px">📷 Escanear código de barras</button>
+                    <button class="btn secondary wide" id="scan" style="margin:0 0 10px"><i class="fa-solid fa-camera" aria-hidden="true"></i>Escanear código de barras</button>
                     <p class="hint">Escribe el nombre y se rellenan solos sus niveles. En bebidas con leche cuenta tazas: 1 taza = 1 cápsula de café + 1 de leche.</p>
                 </div>
                 <div class="panel" id="sList"></div>
@@ -957,16 +1027,16 @@
                     <div class="pinbox" id="pinBox">—</div>
                     <p class="hint" id="pinHint">El código completo es <b>Dolce-Timer-…-XXXXXXXX</b>. Aquí solo ves los 8 dígitos; la app añade el resto al conectarse.</p>
                     <div class="field-row">
-                        <button class="btn secondary" id="newPin"><i aria-hidden="true">🆕</i> Nuevo PIN</button>
-                        <button class="btn secondary" id="qrBtn"><i aria-hidden="true">🖼️</i> Ver QR</button>
+                        <button class="btn secondary" id="newPin"><i class="fa-solid fa-shuffle" aria-hidden="true"></i>Nuevo PIN</button>
+                        <button class="btn secondary" id="qrBtn"><i class="fa-solid fa-qrcode" aria-hidden="true"></i>Ver QR</button>
                     </div>
                     <div id="qrWrap" hidden><canvas id="qrC" width="240" height="240" aria-label="Código QR de vinculación"></canvas></div>
                 </div>
                 <div class="panel"><strong>Conectarte con otro dispositivo</strong>
                     <div class="field"><label for="pinIn">PIN de 8 dígitos</label><input id="pinIn" inputmode="numeric" autocomplete="off" placeholder="Ej. 48190326" maxlength="8"></div>
                     <div class="field-row">
-                        <button class="btn primary wide" id="connBtn" style="margin:0"><i aria-hidden="true">🔗</i> Conectar</button>
-                        <button class="btn secondary" id="scanQr"><i aria-hidden="true">📷</i> Escanear QR</button>
+                        <button class="btn primary wide" id="connBtn" style="margin:0"><i class="fa-solid fa-link" aria-hidden="true"></i>Conectar</button>
+                        <button class="btn secondary" id="scanQr"><i class="fa-solid fa-camera" aria-hidden="true"></i>Escanear QR</button>
                     </div>
                 </div>
                 <div class="panel"><strong>Estado</strong>
@@ -1011,6 +1081,7 @@
                     <label class="tg"><span>Pitidos 3, 2, 1 antes del final</span><input type="checkbox" data-s="tick"></label>
                     <label class="tg"><span>Mantener la pantalla encendida</span><input type="checkbox" data-s="wake"></label>
                     <label class="tg"><span>Descontar del stock al terminar</span><input type="checkbox" data-s="ded"></label>
+                    <label class="tg"><span>Contador de cafés</span><input type="checkbox" data-s="cnt"></label>
                     <div class="field"><label for="lw">Avisar de stock bajo con esta cantidad o menos</label><input id="lw" type="number" min="0" max="99" inputmode="numeric"></div>
                 </div>
                 <div class="panel"><strong>Notificaciones</strong><label class="tg"><span>Avisar cuando quede poco o no quede stock</span><input type="checkbox" data-s="not"></label>
@@ -1018,21 +1089,28 @@
                 </div>
                 <div class="panel"><strong>Widget de inicio</strong>
                     <p class="hint">Elige hasta 3 cápsulas. Se crea un enlace minimalista que, al tocar una cápsula, arranca su temporizador.</p>
-                    <div id="wid"></div><button class="btn secondary wide" id="wlink">🔗 Crear enlace del widget</button>
-                    <p class="hint">Ábrelo en tu navegador y usa «Añadir a pantalla de inicio» (iPhone: Compartir; Android: menú ⋮). Un widget nativo no es posible desde una web, y el enlace solo funciona en este móvil.</p>
+                    <div id="wid"></div><button class="btn secondary wide" id="wlink"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>Crear enlace del widget</button>
+                    <div id="wout" hidden>
+                        <div class="field"><label for="wurl">Enlace (funciona en cualquier dispositivo)</label><input id="wurl" readonly autocomplete="off"></div>
+                        <div class="field-row">
+                            <button class="btn secondary" id="wcopy" style="margin:0"><i class="fa-regular fa-copy" aria-hidden="true"></i>Copiar</button>
+                            <button class="btn secondary" id="wwa" style="margin:0"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i>Compartir</button>
+                        </div>
+                        <p class="hint">Puedes abrirlo o enviarlo a quien quieras: la otra persona lo abre en su navegador y usa «Añadir a pantalla de inicio» (iPhone: Compartir; Android: menú ⋮). Al tocar una cápsula, el temporizador arranca directamente en su móvil.</p>
+                    </div>
                 </div>
                 <div class="panel"><strong>Guardado</strong>
-                    <p class="hint">Todo se guarda en este móvil (stock, cafés, niveles, historial y un temporizador en marcha). Exporta una copia de vez en cuando.</p>
-                    <button class="btn secondary wide" id="pst">Proteger el almacenamiento</button><button class="btn secondary wide" id="exp">⬇️ Exportar copia</button><label class="btn secondary wide" for="imp">⬆️ Importar copia</label><input type="file" id="imp" accept="application/json,.json" hidden>
+                    <p class="hint" id="lastSave">Todo se guarda en este dispositivo (stock, cafés, niveles, historial y un temporizador en marcha). Exporta una copia de vez en cuando.</p>
+                    <button class="btn secondary wide" id="pst"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Proteger el almacenamiento</button><button class="btn secondary wide" id="exp"><i class="fa-solid fa-download" aria-hidden="true"></i>Exportar copia</button><label class="btn secondary wide" for="imp"><i class="fa-solid fa-upload" aria-hidden="true"></i>Importar copia</label><input type="file" id="imp" accept="application/json,.json" hidden>
                 </div>
                 <div class="panel"><strong>Últimos cafés</strong>
                     <div id="hist"></div>
                 </div>
-                <div class="panel"><button class="btn secondary wide danger" id="rest">Restaurar todo de fábrica</button></div>
-                <div class="panel"><strong>Privacidad</strong><button class="btn secondary wide" onclick="dolceCookies()">🍪 Cambiar preferencias de cookies</button>
+                <div class="panel"><button class="btn secondary wide danger" id="rest"><i class="fa-solid fa-trash-can" aria-hidden="true"></i>Restaurar todo de fábrica</button></div>
+                <div class="panel"><strong>Privacidad</strong><button class="btn secondary wide" onclick="dolceCookies()"><i class="fa-solid fa-cookie-bite" aria-hidden="true"></i>Cambiar preferencias de cookies</button>
                     <p class="hint">Tus datos se quedan en tu dispositivo; no hay cuentas ni servidor. Solo al escanear un código de barras se envía ese número a Open Food Facts para buscar el nombre.</p>
                 </div>
-                <p class="hint" style="text-align:center">Dolce Timer es independiente y no oficial. Los niveles de cada cápsula vienen de listados públicos de 2021 y de medidas de usuarios.</p>
+                <p class="hint" style="text-align:center" id="appVer">Dolce Timer es independiente y no oficial. Los niveles de cada cápsula vienen de listados públicos de 2021 y de medidas de usuarios.</p>
             </section>
         </main>
     </div>
@@ -1042,7 +1120,7 @@
     </div>
     <nav class="nav" aria-label="Navegación principal">
         <div>
-            <button class="nb active" data-v="homeView"><span>⏱️</span>Temporizador</button><button class="nb" data-v="stockView"><span>📦</span>Stock</button><button class="nb" data-v="syncView"><span>🔗</span>Vincular</button><button class="nb" data-v="lvView"><span>🎛️</span>Niveles</button><button class="nb" data-v="setView"><span>⚙️</span>Ajustes</button>
+            <button class="nb active" data-v="homeView"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i>Temporizador</button><button class="nb" data-v="stockView"><i class="fa-solid fa-box-open" aria-hidden="true"></i>Stock</button><button class="nb" data-v="syncView"><i class="fa-solid fa-link" aria-hidden="true"></i>Vincular</button><button class="nb" data-v="lvView"><i class="fa-solid fa-sliders" aria-hidden="true"></i>Niveles</button><button class="nb" data-v="setView"><i class="fa-solid fa-gear" aria-hidden="true"></i>Ajustes</button>
         </div>
     </nav>
     <dialog id="dlg" aria-label="Editar cápsula"></dialog>
@@ -1079,9 +1157,9 @@
                     t: 0
                 }
             });
-            const em = n => /ice|iced|cold|nestea/i.test(n) ? "❄️" : /choco|mocha|nesquik/i.test(n) ? "🍪" : /té|tea|matcha|marrakesh|macaron|citrus/i.test(n) ? "🍃" : /leche|latte|cappuccino|cortado|macchiato/i.test(n) ? "🥛" : "☕";
-            const FAE = {"fa-mug-hot":"☕","fa-snowflake":"❄️","fa-leaf":"🍃","fa-glass-water":"🥛","fa-cookie-bite":"🍪"};
-const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
+            const em = n => /ice|iced|cold|nestea/i.test(n) ? "fa-snowflake" : /choco|mocha|nesquik/i.test(n) ? "fa-cookie-bite" : /té|tea|matcha|marrakesh|macaron|citrus/i.test(n) ? "fa-leaf" : /leche|latte|cappuccino|cortado|macchiato/i.test(n) ? "fa-glass-water" : "fa-mug-hot";
+const FAOK = /^(fa(s|br|r|l|ss|sb|b)?\s+)?fa-[a-z0-9-]+$/i;
+const ico = e => FAOK.test(String(e || "").trim()) ? `<i class="fa-icon ${/^fa-/.test(String(e).trim()) ? "fa-solid " + e : e}" aria-hidden="true"></i>` : `<span class="fa-icon">${esc(e || "☕")}</span>`;
             // Catálogo Dolce Gusto: nombre|niveles (Etiqueta+nivel por cápsula, en orden de preparación). Fuente: listado público de Nescafé Dolce Gusto (2021) y medidas de usuarios.
             const CAT = "Ristretto|1;Ristretto Ardenza|1;Espresso|2;Espresso Descafeinado|2;Espresso Barista|1;Espresso Intenso|2;Espresso Caramel|2;Cortado|3;Cortado Descafeinado|3;Doppio Espresso|3;Americano|7;Americano Intenso|7;Lungo|4;Lungo Descafeinado|4;Lungo Intenso|4;Lungo Mild|4;Grande|7;Grande Intenso|7;Grande Mild|7;Café con leche|6;Café con leche Descafeinado|6;Café con leche Intenso|6;Cold Brew|6;Iced Coffee|3;Cappuccino|Leche6+Café1;Cappuccino Light|Leche6+Café1;Cappuccino Intenso|Leche6+Café1;Cappuccino Ice|Leche3+Café3;Latte Macchiato|Leche5+Café2;Latte Macchiato Light|Leche5+Café2;Latte Macchiato Caramel|Leche5+Café2;Latte Macchiato Vainilla|Leche5+Café2;Latte Macchiato Sin azúcar|Leche5+Café2;Chococino|Chocolate3+Leche3;Chococino Caramel|Chocolate3+Leche3;Mocha|Café3+Leche3;Chai Tea Latte|Té3+Leche3;Tea Latte|Té3+Leche3;Nesquik|5;Marrakesh Style Tea|6;Citrus Honey Black Tea|6;Macaron Green Tea|6;Nestea Limón|7;Nestea Melocotón|7;Uji Matcha|3".split(";").map(x => {
                 const [n, sp] = x.split("|");
@@ -1118,7 +1196,8 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     wake: 1,
                     ded: 1,
                     low: 3,
-                    not: 0
+                    not: 0,
+                    cnt: 1
                 },
                 mach: "gen",
                 wid: [],
@@ -1128,7 +1207,8 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     f: 7
                 },
                 hist: [],
-                run: null
+                run: null,
+                counter: null
             });
 
             function mig(d) {
@@ -1146,7 +1226,8 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     },
                     items: d.items.filter(i => i && i.name && Array.isArray(i.st) && i.st.length),
                     hist: d.hist || [],
-                    run: d.run || null
+                    run: d.run || null,
+                    counter: d.counter || null
                 };
                 if (d && Array.isArray(d.drinks)) {
                     o.items = d.drinks.filter(x => x && x.name && +x.seconds > 0).map(x => {
@@ -1352,13 +1433,77 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                 save();
                 rAll()
             };
-            /* Widget y accesos rápidos (máx. 3) */
+            /* Widget y accesos rápidos (máx. 3). El enlace del widget viaja con su propia copia de las
+               cápsulas (hash al final de la URL), así que funciona en cualquier dispositivo, no solo en este móvil. */
             const P = new URLSearchParams(location.search),
                 WM = P.has("w");
-            const wv = () => {
-                const w = (P.get("w") || "").split(",").filter(Boolean);
-                return (w.length ? w : S.wid).slice(0, 3)
-            };
+            /* Comprimir/descomprimir el payload del widget (gzip si el navegador lo permite) */
+            async function wEnc(obj) {
+                const bytes = new TextEncoder().encode(JSON.stringify(obj));
+                let comp = bytes;
+                if ("CompressionStream" in window) {
+                    try {
+                        comp = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+                    } catch {}
+                }
+                let bin = "";
+                comp.forEach(b => bin += String.fromCharCode(b));
+                return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+            }
+
+            function wDec(str) {
+                const bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                return bytes;
+            }
+            async function wRead() {
+                try {
+                    const h = decodeURIComponent(location.hash.slice(1));
+                    if (!h || !WM) return null;
+                    let bytes = wDec(h);
+                    if ("DecompressionStream" in window && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                        try {
+                            bytes = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
+                        } catch {}
+                    }
+                    const j = JSON.parse(new TextDecoder().decode(bytes));
+                    return j && Array.isArray(j.items) ? j : null;
+                } catch { return null }
+            }
+            const WDATA = { d: null };
+            const wv = () => (P.get("w") || "").split(",").filter(Boolean).slice(0, 3);
+
+            /* En modo widget (?w=...), las cápsulas viajan dentro del propio enlace (hash comprimido),
+               para que cualquier dispositivo pueda abrirlo aunque nunca haya usado la app.
+               Si no hay internet, se reutiliza la última copia guardada en este navegador. */
+            async function bootWidget() {
+                document.body.classList.add("wm");
+                const nb = document.querySelector('.nb[data-v="syncView"]');
+                if (nb) nb.remove();
+                $("qa").replaceChildren();
+                const d = await wRead();
+                if (d) {
+                    WDATA.d = d;
+                    S = mig(d);
+                    try { localStorage.setItem(K + ".widget", JSON.stringify(d)) } catch {}
+                } else {
+                    try {
+                        const cached = localStorage.getItem(K + ".widget");
+                        if (cached) { S = mig(JSON.parse(cached)); WDATA.d = S }
+                    } catch {}
+                }
+                if (!S.items.length) {
+                    $("grid").innerHTML = '<div class="empty" style="grid-column:1/-1">Este enlace no trae cápsulas. Pide a quien te lo envíe que active «Crear enlace del widget» en Ajustes.</div>';
+                    $("sName").textContent = "Enlace sin cápsulas";
+                    $("go").disabled = true;
+                    return
+                }
+                S.sel = S.items[0].id;
+                rAll();
+                const g = P.get("go");
+                if (g && S.items.some(i => i.id === g)) quick(g)
+            }
 
             function quick(id) {
                 ainit();
@@ -1393,12 +1538,42 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                 save();
                 rQa()
             };
-            $("wlink").onclick = () => {
-                if (!S.wid.length) return toast("Elige al menos una cápsula.");
-                const u = location.origin + location.pathname + "?w=" + S.wid.join(",");
-                (navigator.clipboard ? navigator.clipboard.writeText(u).then(() => toast("Enlace copiado. Ábrelo y añádelo a la pantalla de inicio.")) : Promise.reject()).catch(() => navigator.share ? navigator.share({
-                    url: u
-                }) : prompt("Copia este enlace", u))
+
+            function widgetObj() {
+                const sel = S.wid.map(id => S.items.find(i => i.id === id)).filter(Boolean);
+                if (!sel.length) return null;
+                const slim = sel.map(x => ({
+                    id: x.id, name: x.name, brand: x.brand || "", e: x.e, st: x.st, stock: x.stock, low: x.low ?? null, fav: 0
+                }));
+                return { v: 2, items: slim, set: S.set, mach: S.mach, mod: S.mod, wid: S.wid, hist: [], run: null, codes: {} };
+            }
+
+            /* Crear el enlace del widget: viaja con su propia copia de las cápsulas comprimidas,
+               así que funciona en cualquier dispositivo, aunque nunca haya usado la app. */
+            async function makeWLink() {
+                const o = widgetObj();
+                if (!o) return toast("Elige primero hasta 3 cápsulas arriba.");
+                try {
+                    const payload = await wEnc(o);
+                    const url = location.origin + location.pathname + "?w=" + o.wid.join(",") + "#" + payload;
+                    $("wurl").value = url;
+                    $("wout").hidden = false;
+                    toast("Enlace creado. Ábrelo o compártelo: funcionará en cualquier dispositivo.")
+                } catch {
+                    toast("No se pudo crear el enlace en este navegador.")
+                }
+            }
+            $("wlink").onclick = makeWLink;
+            $("wcopy").onclick = () => {
+                const u = $("wurl").value;
+                (navigator.clipboard ? navigator.clipboard.writeText(u).then(() => toast("Enlace copiado.")) : Promise.reject())
+                    .catch(() => prompt("Copia este enlace", u))
+            };
+            $("wwa").onclick = () => {
+                const u = $("wurl").value;
+                if (!u) return;
+                if (navigator.share) navigator.share({ title: "Mi widget de cafés", text: "Acceso rápido a mis cápsulas:", url: u }).catch(() => {});
+                else location.href = "https://wa.me/?text=" + encodeURIComponent("Mi widget de cafés ☕ " + u)
             };
             /* Notificaciones locales */
             function notify(t, b) {
@@ -1631,9 +1806,10 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     x = it();
                 if (!x) return;
                 const b0 = () => { if (window.SYNC) window.SYNC.broadcast(JSON.stringify(S)) };
-                if (!r || r.st === "done" || r.id !== x.id) { begin(0); b0() }
+                if (!r || r.st === "done" || r.id !== x.id) { S.counter = null; begin(0); b0() }
                 else if (r.st === "run") {
                     r.rem = Math.max(0, (r.end - Date.now()) / 1e3);
+                    S.counter = null;
                     r.st = "pause";
                     clearInterval(tm);
                     free();
@@ -1672,7 +1848,7 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     $("time").textContent = "00:00";
                     $("cap").textContent = "";
                     $("stg").textContent = "";
-                    $("go").innerHTML = '▶️ Empezar';
+                    $("go").innerHTML = '<i class="fa-solid fa-play"></i>Empezar';
                     drawGlass([], [], 220);
                     return
                 }
@@ -1693,11 +1869,11 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                 } [stt];
                 $("stg").textContent = (n > 1 ? "Fase " + (i + 1) + " de " + n + ", " + s.l.toLowerCase() + ". " : "") + (s.m === "l" ? "Nivel " + s.v + ", " : "") + mlOf(s) + " ml";
                 $("go").innerHTML = {
-                    idle: '▶️ Empezar',
-                    run: '⏸️ Pausar',
-                    pause: '▶️ Continuar',
-                    wait: '▶️ Fase ' + (i + 1) + ": " + esc(s.l),
-                    done: '🔄 Otra vez'
+                    idle: '<i class="fa-solid fa-play"></i>Empezar',
+                    run: '<i class="fa-solid fa-pause"></i>Pausar',
+                    pause: '<i class="fa-solid fa-play"></i>Continuar',
+                    wait: '<i class="fa-solid fa-play"></i>Fase ' + (i + 1) + ": " + esc(s.l),
+                    done: '<i class="fa-solid fa-rotate-right"></i>Otra vez'
                 } [stt];
                 const po = x.st.map((q, k) => {
                     const m = mlOf(q);
@@ -1708,7 +1884,24 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     return m * Math.min(1, Math.max(0, (e - S.mod.d) / Math.max(1, r.tot - S.mod.d)))
                 });
                 drawGlass(po, x.st.map(q => col(q.l)), Math.max(220, x.st.reduce((a, q) => a + mlOf(q), 0) + 25));
-                $("status").textContent = low(x) ? "Te quedan " + x.stock + " de " + x.name + "." : ""
+                $("status").textContent = low(x) ? "Te quedan " + x.stock + " de " + x.name + "." : "";
+                rCounter(r)
+            }
+            /* Contador de sesión: cuenta hacia arriba desde 0 mientras cae el café (se ve en todos los dispositivos vinculados) */
+            function rCounter(r) {
+                let c = $("cntChip");
+                const on = !!S.set.cnt && r && (r.st === "run" || r.st === "wait") && r.tot != null;
+                if (!on) { if (c) c.remove(); S.counter = null; return }
+                if (!c) {
+                    c = document.createElement("div");
+                    c.id = "cntChip";
+                    c.className = "cntChip";
+                    $("stg").after(c)
+                }
+                const base = S.counter && S.counter.id === r.id && S.counter.st === r.st ? S.counter.t : 0;
+                const el = r.st === "run" ? base + Math.min(r.tot, Math.max(0, r.tot - r.rem)) : base;
+                S.counter = { id: r.id, st: r.st, t: el };
+                c.textContent = "▸ " + fmt(el)
             }
 
             function drawGlass(po, cs, cap) {
@@ -1829,7 +2022,7 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     id: uid(),
                     name: "",
                     brand: "",
-                    e: "☕",
+                    e: "fa-mug-hot",
                     st: [{
                         l: "Cápsula",
                         m: "l",
@@ -1849,26 +2042,30 @@ const ico = e => FAE[e] || (/^fa-/.test(String(e)) ? "☕" : esc(e));
                     n = x.st.length;
                 $("dlg").innerHTML = `<h2 style="margin-top:0">Editar cápsula</h2>
 <div class="field"><label>Nombre</label><input data-f="name" maxlength="40" value="${esc(x.name)}"></div>
-<div class="field-row"><div class="field"><label>Marca (opcional)</label><input data-f="brand" maxlength="30" value="${esc(x.brand)}" placeholder="Ej. Marcilla"></div><div class="field"><label>Icono (emoji)</label><input data-f="e" maxlength="4" value="${esc(x.e)}"></div></div>
+<div class="field-row"><div class="field"><label>Marca (opcional)</label><input data-f="brand" maxlength="30" value="${esc(x.brand)}" placeholder="Ej. Marcilla"></div><div class="field"><label>Icono</label><input data-f="e" maxlength="30" value="${esc(x.e)}" placeholder="fa-mug-hot o un emoji">${FAICHS}</div></div>
 ${x.st.map((s,i)=>`<div class="stbox"><div class="field" style="margin-top:0"><label>${n>1?"Cápsula "+(i+1):"Cápsula"}</label><input data-f="lab" data-i="${i}" maxlength="20" value="${esc(s.l)}"></div>
 <div class="seg"><button data-a="m" data-i="${i}" data-m="l" class="${s.m==="l"?"on":""}">Niveles</button><button data-a="m" data-i="${i}" data-m="ml" class="${s.m==="ml"?"on":""}">Mililitros</button></div>
 ${s.m==="l"?`<div class="chips">${[1,2,3,4,5,6,7].map(v=>`<button data-a="lv" data-i="${i}" data-v="${v}" class="${s.v===v?"on":""}" aria-label="Nivel ${v}">${v}</button>`).join("")}</div>`:`<div class="field"><input data-f="v" data-i="${i}" type="number" min="10" max="400" step="5" inputmode="numeric" value="${s.v}" aria-label="Mililitros"></div>`}
 <div class="field-row" style="grid-template-columns:1fr auto"><small id="inf${i}" class="hint">${infoTxt(s)}</small><div class="step"><button data-a="tr" data-i="${i}" data-d="-1" aria-label="Un segundo menos">−</button><b id="trv${i}" style="min-width:52px">${(s.t>0?"+":"")+(+s.t||0)} s</b><button data-a="tr" data-i="${i}" data-d="1" aria-label="Un segundo más">+</button></div></div>
-${n>1?`<button class="mini" data-a="rm" data-i="${i}">Quitar esta cápsula</button>`:""}</div>`).join("")}
-<div class="chips" style="gap:8px">${n<2?'<button style="width:auto;padding:0 14px" data-a="add">＋ Segunda cápsula</button>':'<button style="width:auto;padding:0 14px" data-a="swap">⇅ Invertir orden</button>'}</div>
+${n>1?`<button class="mini" data-a="rm" data-i="${i}"><i class="fa-solid fa-xmark"></i>Quitar esta cápsula</button>`:""}</div>`).join("")}
+<div class="chips" style="gap:8px">${n<2?'<button style="width:auto;padding:0 14px" data-a="add"><i class="fa-solid fa-plus"></i>Segunda cápsula</button>':'<button style="width:auto;padding:0 14px" data-a="swap"><i class="fa-solid fa-right-left"></i>Invertir orden</button>'}</div>
 <label class="tg"><span>Controlar stock</span><input type="checkbox" data-f="sc" ${x.stock!=null?"checked":""}></label>
 ${x.stock!=null?`<div class="two"><div class="field"><label>Cantidad${n>1?" (tazas)":""}</label><input data-f="stock" type="number" min="0" inputmode="numeric" value="${x.stock}"></div><div class="field"><label>Avisar con</label><input data-f="low" type="number" min="0" inputmode="numeric" value="${x.low??""}" placeholder="${S.set.low}"></div></div>`:""}
 <label class="tg"><span>Favorita (aparece primero)</span><input type="checkbox" data-f="fav" ${x.fav?"checked":""}></label>
-<div class="controls" style="margin-top:14px"><button class="btn primary" data-a="save">Guardar</button><button class="btn secondary" data-a="close">Cancelar</button></div>
-${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a="del">Eliminar cápsula</button>':""}`
+<div class="controls" style="margin-top:14px"><button class="btn primary" data-a="save"><i class="fa-solid fa-check"></i>Guardar</button><button class="btn secondary" data-a="close">Cancelar</button></div>
+${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a="del"><i class="fa-solid fa-trash-can"></i>Eliminar cápsula</button>':""}`
             }
             const infoTxt = s => mlOf(s) + " ml, nivel " + lvS(s) + " aprox., " + secs(s) + " s. Ajuste fino:";
+            /* Iconos rápidos del editor (Font Awesome o emoji escrito a mano) */
+            const FAPICK = ["fa-mug-hot", "fa-glass-water", "fa-cup-straw", "fa-cookie-bite", "fa-leaf", "fa-snowflake", "fa-clover"];
+            const FAICHS = `<div class="chips" style="margin:6px 0 0">${FAPICK.map(f => `<button data-a="ic" data-v="${f}" aria-label="Icono ${f}"><i class="fa-solid ${f}"></i></button>`).join("")}</div>`;
             $("dlg").addEventListener("click", e => {
                 const b = e.target.closest("[data-a]");
                 if (!b) return;
                 const a = b.dataset.a,
                     i = +b.dataset.i,
                     s = ed.st[i];
+                if (a === "ic") { ed.e = b.dataset.v; drawEd(); return }
                 if (a === "close") return $("dlg").close();
                 if (a === "m") {
                     const m = b.dataset.m;
@@ -2110,12 +2307,11 @@ ${S.items.some(i=>i.id===x.id)?'<button class="btn secondary wide danger" data-a
             if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
             if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
             if (WM) {
-                document.body.classList.add("wm");
-                const nb = document.querySelector('.nb[data-v="syncView"]');
-                if (nb) nb.remove()
+                bootWidget()
+            } else {
+                rAll();
+                if (P.get("go") && S.items.some(i => i.id === P.get("go"))) quick(P.get("go"))
             }
-            rAll();
-            if (P.get("go") && S.items.some(i => i.id === P.get("go"))) quick(P.get("go"));
             /* Puente con sync.js: compartir y aplicar el estado entre dispositivos vinculados */
             window.__dolceState = () => JSON.stringify(S);
             window.__dolceApply = raw => {
