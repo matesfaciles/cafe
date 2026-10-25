@@ -13,7 +13,9 @@
     <link rel="icon" href="./icons/icon-192.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
-    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js" defer></script>
+    <script src="./scan.js" defer></script>
     <meta property="og:title" content="Dolce Timer">
     <meta property="og:description" content="Temporizador, stock y escáner de cápsulas para tu Dolce Gusto manual.">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -756,10 +758,11 @@
             margin-top: 10px
         }
 
-        #qrC {
+        #qrWrap svg {
             width: 220px;
             height: 220px;
-            image-rendering: pixelated
+            display: block;
+            margin: 0 auto
         }
 
         .peers {
@@ -1030,7 +1033,7 @@
                         <button class="btn secondary" id="newPin"><i class="fa-solid fa-shuffle" aria-hidden="true"></i>Nuevo PIN</button>
                         <button class="btn secondary" id="qrBtn"><i class="fa-solid fa-qrcode" aria-hidden="true"></i>Ver QR</button>
                     </div>
-                    <div id="qrWrap" hidden><canvas id="qrC" width="240" height="240" aria-label="Código QR de vinculación"></canvas></div>
+                    <div id="qrWrap" hidden aria-label="Código QR de vinculación"></div>
                 </div>
                 <div class="panel"><strong>Conectarte con otro dispositivo</strong>
                     <div class="field"><label for="pinIn">PIN de 8 dígitos</label><input id="pinIn" inputmode="numeric" autocomplete="off" placeholder="Ej. 48190326" maxlength="8"></div>
@@ -1125,11 +1128,15 @@
     </nav>
     <dialog id="dlg" aria-label="Editar cápsula"></dialog>
     <dialog id="sc" aria-label="Escanear código">
-        <h2 style="margin-top:0">Escanear código de barras</h2><video id="vid" playsinline muted style="width:100%;border-radius:16px"></video>
+        <h2 style="margin-top:0">Escanear código</h2><video id="vid" playsinline muted autoplay style="width:100%;border-radius:16px;background:#000"></video>
         <p class="hint" id="bm"></p>
         <div class="field-row">
             <div class="field"><input id="bc" inputmode="numeric" placeholder="O escribe el código" aria-label="Código de barras"></div><button class="btn primary" id="bok">Buscar</button>
-        </div><button class="btn secondary wide" id="bx">Cerrar</button>
+        </div>
+        <div class="field-row">
+            <button class="btn secondary" id="torch" hidden style="margin:0"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i>Linterna</button>
+            <button class="btn secondary wide" id="bx" style="margin:0">Cerrar</button>
+        </div>
     </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script>
@@ -1590,46 +1597,13 @@ const ico = e => FAOK.test(String(e || "").trim()) ? `<i class="fa-icon ${/^fa-/
                 if (x.stock === 0) notify("Sin cápsulas", "Se han acabado: " + x.name + ".");
                 else if (low(x)) notify("Quedan pocas", "Solo " + x.stock + " de " + x.name + ".")
             }
-            /* Escáner de códigos de barras */
-            let stream = null,
-                scanT = null,
-                pend = null;
+            /* Escáner de códigos: la cámara y la decodificación las gestiona scan.js (ZXing),
+             * que funciona también en iPhone. Aquí solo se busca el producto por su código. */
+            let pend = null;
 
-            function stopScan() {
-                clearInterval(scanT);
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = null;
-                if ($("sc").open) $("sc").close()
-            }
-            async function openScan() {
-                $("sc").showModal();
-                $("bm").textContent = "Apunta al código de la caja. Al buscar, el número se envía a Open Food Facts.";
-                if (!("BarcodeDetector" in window) || !navigator.mediaDevices) return $("bm").textContent = "Tu navegador no escanea con la cámara (iPhone aún no). Escribe el código de la caja.";
-                try {
-                    const d = new BarcodeDetector({
-                        formats: ["ean_13", "ean_8", "upc_a"]
-                    });
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: "environment"
-                        }
-                    });
-                    $("vid").srcObject = stream;
-                    await $("vid").play();
-                    scanT = setInterval(async () => {
-                        try {
-                            const r = await d.detect($("vid"));
-                            if (r[0]) handleCode(r[0].rawValue)
-                        } catch {}
-                    }, 350)
-                } catch {
-                    $("bm").textContent = "No pude abrir la cámara. Escribe el código."
-                }
-            }
             async function handleCode(c) {
                 c = String(c).trim();
                 if (!/^\d{6,14}$/.test(c)) return toast("Código no válido.");
-                stopScan();
                 let n = S.codes[c] || "",
                     br = "",
                     q = 16;
@@ -1656,14 +1630,11 @@ const ico = e => FAOK.test(String(e || "").trim()) ? `<i class="fa-icon ${/^fa-/
                 show("stockView");
                 toast(n ? "Encontrada: " + n + ". Revisa y pulsa Añadir." : "No la conozco: escribe el nombre y la recordaré.")
             }
-            $("scan").onclick = openScan;
-            $("bx").onclick = stopScan;
-            $("bok").onclick = () => handleCode($("bc").value);
-            $("sc").addEventListener("close", () => {
-                clearInterval(scanT);
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = null
-            });
+            window.__handleCode = handleCode;   // scan.js la llama al leer un código de barras
+            $("scan").onclick = () => {
+                if (window.SCAN) window.SCAN.start();
+                else toast("El escáner aún no está disponible. Comprueba tu conexión y vuelve a intentarlo.")
+            };
             /* Sonido, vibración y pantalla */
             function ainit() {
                 try {

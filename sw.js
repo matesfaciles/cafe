@@ -5,10 +5,10 @@
  *  - Archivos de la app (sync.js, iconos, manifest): red primero con actualización en segundo plano.
  *  - CDNs (Font Awesome, PeerJS, QR): stale-while-revalidate (rápido y disponible sin conexión).
  */
-const VERSION = "dolce-timer-v4";
+const VERSION = "dolce-timer-v5";
 const APP_CACHE = VERSION + "-app";
 const CDN_CACHE = VERSION + "-cdn";
-const APP_SHELL = ["./", "./index.html", "./sync.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
+const APP_SHELL = ["./", "./index.html", "./sync.js", "./scan.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 const CDN_HOSTS = ["unpkg.com", "cdn.jsdelivr.net", "cdnjs.cloudflare.com", "use.fontawesome.com", "kit.fontawesome.com"];
 
 self.addEventListener("install", event => {

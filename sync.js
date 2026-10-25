@@ -26,22 +26,23 @@
     const fullId = p => BASE + "-" + p;
     const pinOf = id => id ? id.slice(-8) : "";
 
-    /* ---------- QR propio (librería qrcode, canvas) ---------- */
+    /* ---------- QR propio (ZXing: SVG nítido a cualquier tamaño) ---------- */
     function drawQr(text) {
-        const c = $("qrC");
-        if (!c) return false;
+        const wrap = $("qrWrap");
+        if (!wrap) return false;
         try {
-            if (window.QRCode && window.QRCode.create) {
-                const q = window.QRCode.create(text, { errorCorrectionLevel: "M" });
-                const m = q.modules, size = m.size;
-                const s = Math.floor(216 / size), off = Math.floor((240 - size * s) / 2);
-                const ctx = c.getContext("2d");
-                ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 240, 240);
-                ctx.fillStyle = "#000";
-                for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-                    if (m.data[y * size + x]) ctx.fillRect(off + x * s, off + y * s, s, s);
+            if (window.ZXingBrowser && window.ZXingBrowser.BrowserQRCodeSvgWriter) {
+                const w = new window.ZXingBrowser.BrowserQRCodeSvgWriter();
+                wrap.innerHTML = "";
+                w.writeToDom(wrap, text, 240, 240);
+                const svg = wrap.querySelector("svg");
+                if (svg) {
+                    svg.setAttribute("aria-label", "Código QR de vinculación");
+                    svg.style.maxWidth = "100%";
+                    svg.style.height = "auto";
+                    return true;
                 }
-                return true;
+                return false;
             }
         } catch {}
         return false;
@@ -246,46 +247,17 @@
         ui("Desvinculado. Los cambios vuelven a guardarse solo en este móvil.");
     }
 
-    /* ---------- Escáner QR ---------- */
-    let scanStream = null, scanTimer = null;
-    async function scanQr() {
-        if (!("BarcodeDetector" in window) || !navigator.mediaDevices) {
-            toastSync("Tu navegador no puede escanear QR con la cámara. Escribe el PIN de 8 dígitos.");
+    /* ---------- Escáner QR (delegado en scan.js / ZXing) ---------- */
+    function scanQr() {
+        if (!window.SCAN || !window.SCAN.available()) {
+            toastSync("El escáner aún no se ha descargado. Comprueba tu conexión y vuelve a intentarlo, o escribe el PIN.");
             return;
         }
-        try {
-            const det = new BarcodeDetector({ formats: ["qr_code"] });
-            scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            const v = $("vid");
-            v.srcObject = scanStream;
-            await v.play();
-            $("bm").textContent = "Apunta a la pantalla «Ver QR» del otro móvil.";
-            $("sc").showModal();
-            scanTimer = setInterval(async () => {
-                try {
-                    const r = await det.detect(v);
-                    if (r[0]) {
-                        const txt = String(r[0].rawValue || "").trim();
-                        /* Aceptamos tanto la forma interna (dolce-timer-…) como la visible
-                         * (Dolce-Timer-…): lo único que se lee son los 8 dígitos finales. */
-                        const mm = txt.match(/^dolce-timer-[0-9a-f]{64}-(\d{8})$/i);
-                        if (mm) {
-                            stopQrScan();
-                            $("pinIn").value = mm[1];
-                            connectByPin(mm[1]);
-                        }
-                    }
-                } catch {}
-            }, 400);
-        } catch {
-            toastSync("No pude abrir la cámara. Escribe el PIN.");
-        }
-    }
-    function stopQrScan() {
-        clearInterval(scanTimer);
-        if (scanStream) scanStream.getTracks().forEach(t => t.stop());
-        scanStream = null;
-        if ($("sc").open) $("sc").close();
+        window.SCAN.onQr = p => {           // al leer un QR de vinculación, conectar con ese PIN
+            $("pinIn").value = p;
+            connectByPin(p);
+        };
+        window.SCAN.start();
     }
 
     function toastSync(msg) {
@@ -319,7 +291,8 @@
         $("pinIn").oninput = e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 8); };
         $("scanQr").onclick = scanQr;
         $("discBtn").onclick = disconnectAll;
-        $("sc").addEventListener("close", () => { if (scanStream) stopQrScan(); });
+        // El cierre del escáner lo gestiona scan.js (window.SCAN.stop)
+
     }
 
     function disconnectAllQuiet() {
@@ -341,11 +314,16 @@
         setInterval(ui, 5000);
     }
 
-    /* PeerJS y qrcode se cargan con «defer»: esperan a que el documento termine de parsearse,
-     * así que en este punto ya están disponibles (si hay internet). */
-    if ("Peer" in window) start();
-    else {
+    /* PeerJS se carga con «defer» desde unpkg; si no está (sin internet o CDN caído),
+     * reintentamos durante ~12 s por si el script llega tarde. */
+    let peerWaits = 0;
+    (function boot() {
+        if ("Peer" in window) return start();
         const st = $("syncStat");
-        if (st) st.textContent = "No se pudo cargar el servicio de vinculación (¿sin internet?). Recarga la página para intentarlo otra vez.";
-    }
+        if (++peerWaits < 24) {
+            setTimeout(boot, 500);
+        } else if (st) {
+            st.textContent = "No se pudo cargar el servicio de vinculación (¿sin internet?). Recarga la página para intentarlo otra vez.";
+        }
+    })();
 })();

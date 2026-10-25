@@ -20,7 +20,7 @@ Aplicación web progresiva (PWA) para móviles y escritorio. Los cafés se guard
 - Ambos dispositivos deben tener la app abierta y conexión a internet (usa la red pública de señalización de PeerJS; los datos viajan cifrados de móvil a móvil).
 - Se sincronizan en tiempo real: stock, cápsulas, niveles/máquina, ajustes, widget, historial y el cronómetro (se ve avanzar en todos los móviles).
 - Si un dispositivo se reconecta o cambia de PIN, la app reintenta sola con los últimos compañeros conocidos.
-- Nota: PeerJS y la librería QR se cargan desde unpkg.com; la primera vez hace falta internet. Después quedan cacheados por el service worker para uso offline (aunque la vinculación en sí requiere red).
+- Nota: PeerJS se carga desde unpkg.com y las librerías QR/escáner (ZXing) desde cdn.jsdelivr.net; la primera vez hace falta internet. Después quedan cacheados por el service worker para uso offline (aunque la vinculación en sí requiere red).
 
 ## Comportamiento
 - En modo instalado (`display: standalone`) no se muestra la barra de URL del navegador. Los controles Atrás e Inicio están dentro de la app.
